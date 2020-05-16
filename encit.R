@@ -84,7 +84,11 @@ for (dataset in seq(vmd_results)) {
 
   for (metric in seq(vmd_results[[dataset]]$Metrics)) {
     # save vmd metrics in csv
-    data.frame(FH = rep(FH[metric]),vmd_results[[dataset]]$Metrics[[metric]][,-1]) %>%
+    data.frame(
+      FH = rep(FH[metric]),
+      vmd_results[[dataset]]$Metrics[[metric]][,-1] %>% 
+        .[order(as.character(rownames(.))),,drop=FALSE]
+    ) %>%
       write.table(file = filename_vmd,
                   append = TRUE,
                   sep = ',',
@@ -92,7 +96,11 @@ for (dataset in seq(vmd_results)) {
                   row.names = TRUE)
     
     # save single metrics in csv
-    data.frame(FH = rep(FH[metric]),single_results[[dataset]]$Metrics[[metric]][,-1]) %>%
+    data.frame(
+      FH = rep(FH[metric]),
+      single_results[[dataset]]$Metrics[[metric]][,-1] %>% 
+        .[order(as.character(rownames(.))),,drop=FALSE]
+    ) %>%
       write.table(file = filename_single,
                   append = TRUE,
                   sep = ',',
