@@ -26,23 +26,29 @@ sapply(packages,packs)
 rm(packages)
 
 library(extrafont)
-# windowsFonts(Times = windowsFont("TT Times New Roman"))
+font_import(pattern = 'CM')
 library(ggplot2)
 library(Cairo)
 
 # Data treatment ----
-setwd(DataDir)
+# set working directory
+setwd(DataDir) 
 
+# load data
 raw_data <- read.csv('dataset.csv')
 
+# format date column
 raw_data$PCTimeStamp <- raw_data$PCTimeStamp %>% as.Date()
 
+# set a list of dates to analyze
 dates <- paste0('2017-08-',c(22:26))
 
+# create empty lists
 wind_data <- list()
 vmd_results <- list()
 single_results <- list()
 
+# list of models
 model_list <- c(
   'knn',
   'svmRadial',
@@ -52,15 +58,38 @@ model_list <- c(
 )
 
 for (date in seq(length(dates)-1)) {
+  # filtering the data according to date list
   wind_data[[date]] <- raw_data %>% 
     filter(PCTimeStamp >= dates[date] & PCTimeStamp < dates[date+1])
   
+  # training using vmd
   vmd_results[[date]] <- vmd_pred(wind_data[[date]], model_list)
+  
+  # training using single models
   single_results[[date]] <- single_pred(wind_data[[date]], model_list)
 }
 
+# Save results ----
+# set working directory
 setwd(ResultsDir)
-FH <- c('ODA','TDA','SDA')
+
+# loop to save RData
+for (dataset in seq(vmd_results)) {
+  saveRDS(
+    object = vmd_results[[dataset]],
+    file = paste0('results_',dates[dataset],'_vmd.rds')
+  )
+  
+  saveRDS(
+    object = single_results[[dataset]],
+    file = paste0('results_',dates[dataset],'_single.rds')
+  )
+}
+
+
+# loop to save metrics results
+FH <- c('ODA','TDA','SDA') # aux to create forecasting horizon column
+
 for (dataset in seq(vmd_results)) {
   filename_vmd <- paste0('dataset_',dates[dataset],'_vmd_metrics.csv') # vmd file name
   filename_single <- paste0('dataset_',dates[dataset],'_single_metrics.csv') # single file name
@@ -107,4 +136,140 @@ for (dataset in seq(vmd_results)) {
                   col.names = FALSE,
                   row.names = TRUE)
   }
+}
+
+
+# Plot ----
+setwd(ResultsDir)
+
+# load data
+file_list <- list.files(pattern = '.rds') # list the .rds files
+
+vmd_results <- list()
+single_results <- list()
+
+count_single <- 1 # single models aux counter
+count_vmd <- 1 # vmd models aux counter 
+
+# loop to read data
+for (dataset in seq(file_list)) {
+  if (dataset%%2 != 0) {
+    single_results[[count_single]] <- readRDS(file = file_list[dataset])
+    count_single <- count_single + 1
+  } else {
+    vmd_results[[count_vmd]] <- readRDS(file = file_list[dataset])
+    count_vmd <- count_vmd + 1
+  }
+}
+
+## Datasets
+setwd(FiguresDir)
+datasets <- list()
+
+datasets[[1]] <- data.frame(
+  'Observed'     = vmd_results[[1]]$Predictions$`one-step`[,'Obs'],
+  'ODA.VMD.BRNN' = vmd_results[[1]]$Predictions$`one-step`[,'brnn'],
+  'Observed'     = vmd_results[[1]]$Predictions$`one-step`[,'Obs'],
+  'TDA.VMD.BRNN' = vmd_results[[1]]$Predictions$`three-steps`[,'brnn'],
+  'Observed'     = vmd_results[[1]]$Predictions$`one-step`[,'Obs'],
+  'SDA.VMD.BRNN' = vmd_results[[1]]$Predictions$`six-steps`[,'brnn']
+) %>% melt() %>% data.frame(
+  .,
+  rep(c('Observed','Predicted'), each = nrow(vmd_results[[1]]$Predictions$`one-step`)),
+  rep(c("ODA","TDA","SDA"), each= 2*nrow(vmd_results[[1]]$Predictions$`one-step`))
+)
+
+datasets[[1]]$variable <- NULL
+colnames(datasets[[1]]) <- c('value', 'type', 'FH')
+
+datasets[[2]] <- data.frame(
+  'Observed'       = vmd_results[[2]]$Predictions$`one-step`[,'Obs'],
+  'ODA.VMD.CUBIST' = vmd_results[[2]]$Predictions$`one-step`[,'cubist'],
+  'Observed'       = vmd_results[[2]]$Predictions$`one-step`[,'Obs'],
+  'TDA.VMD.CUBIST' = vmd_results[[2]]$Predictions$`three-steps`[,'cubist'],
+  'Observed'       = vmd_results[[2]]$Predictions$`one-step`[,'Obs'],
+  'SDA.VMD.CUBIST' = vmd_results[[2]]$Predictions$`six-steps`[,'cubist']
+) %>% melt() %>% data.frame(
+  .,
+  rep(c('Observed','Predicted'), each = nrow(vmd_results[[2]]$Predictions$`one-step`)),
+  rep(c("ODA","TDA","SDA"), each= 2*nrow(vmd_results[[2]]$Predictions$`one-step`))
+)
+
+datasets[[2]]$variable <- NULL
+colnames(datasets[[2]]) <- c('value', 'type', 'FH')
+
+datasets[[3]] <- data.frame(
+  'Observed'       = vmd_results[[3]]$Predictions$`one-step`[,'Obs'],
+  'ODA.VMD.CUBIST' = vmd_results[[3]]$Predictions$`one-step`[,'cubist'],
+  'Observed'       = vmd_results[[3]]$Predictions$`one-step`[,'Obs'],
+  'TDA.VMD.BRNN'   = vmd_results[[3]]$Predictions$`three-steps`[,'brnn'],
+  'Observed'       = vmd_results[[3]]$Predictions$`one-step`[,'Obs'],
+  'SDA.VMD.BRNN'   = vmd_results[[3]]$Predictions$`six-steps`[,'brnn']
+) %>% melt() %>% data.frame(
+  .,
+  rep(c('Observed','Predicted'), each = nrow(vmd_results[[3]]$Predictions$`one-step`)),
+  rep(c("ODA","TDA","SDA"), each= 2*nrow(vmd_results[[3]]$Predictions$`one-step`))
+)
+
+datasets[[3]]$variable <- NULL
+colnames(datasets[[3]]) <- c('value', 'type', 'FH')
+
+datasets[[4]] <- data.frame(
+  'Observed'    = vmd_results[[4]]$Predictions$`one-step`[,'Obs'],
+  'ODA.VMD.QRF' = vmd_results[[4]]$Predictions$`one-step`[,'qrf'],
+  'Observed'    = vmd_results[[4]]$Predictions$`one-step`[,'Obs'],
+  'TDA.VMD.QRF' = vmd_results[[4]]$Predictions$`three-steps`[,'qrf'],
+  'Observed'    = vmd_results[[4]]$Predictions$`one-step`[,'Obs'],
+  'SDA.VMD.QRF' = vmd_results[[4]]$Predictions$`six-steps`[,'qrf']
+) %>% melt() %>% data.frame(
+  .,
+  rep(c('Observed','Predicted'), each = nrow(vmd_results[[4]]$Predictions$`one-step`)),
+  rep(c("ODA","TDA","SDA"), each= 2*nrow(vmd_results[[4]]$Predictions$`one-step`))
+)
+
+datasets[[4]]$variable <- NULL
+colnames(datasets[[4]]) <- c('value', 'type', 'FH')
+
+count <- 1
+
+for (dataset in datasets) {
+  n <- table(dataset$FH)[1]/2
+  
+  dataset$FH <- dataset$FH %>% factor(levels = c('ODA', 'TDA', 'SDA'))
+  
+  plot <- dataset %>% as.data.frame %>% 
+    ggplot(aes(x = rep(seq(n),6), y = value, linetype = type, colour = type)) +
+    geom_line(size = 1) +
+    theme_bw() +
+    theme(legend.title = element_blank(),
+          legend.position = c(0.1, 0.75),
+          legend.background = element_blank(),
+          legend.text = element_text(size = 16),
+          text = element_text(family = "CM Roman", size = 20),
+          strip.placement = "outside",
+          strip.background = element_blank(),
+          panel.grid.minor = element_blank(),
+          ) +
+    ylab('Wind Power (KW)') + xlab('Samples (10 minutes)') +
+    facet_grid(rows = vars(FH)) +
+    scale_x_continuous(breaks = seq(0,n,70), limits = c(0,n)) +
+    scale_y_continuous(breaks = c(1000, 1500, 2000)) +
+    scale_color_brewer(palette = 'Set1') +
+    geom_vline(xintercept = n - 6, color = 'black', size = 0.5) +
+    annotate(geom = 'text', x = n*.3, y = 1000, 
+             label = 'Training', color = 'black', family = 'CM Roman', size = 6) +
+    annotate(geom = 'text', x = n, y = 1000, 
+             label = 'Test', color = 'black', family = 'CM Roman', size = 6)
+    
+  plot %>% 
+    ggsave(
+      filename = paste0('PO_dataset_',dates[count],'.pdf'),
+      device = 'pdf',
+      width = 12,
+      height = 6.75,
+      units = "in",
+      dpi = 300
+    )   
+  
+  count <- count + 1
 }
