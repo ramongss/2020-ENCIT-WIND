@@ -1,4 +1,6 @@
 vmd_pred <- function(data, model_list){
+  cat('\n\n######### VMD Prediction #########\n###########',
+      as.character(format.Date(data$PCTimeStamp[1])),'###########\n\n')
   # Data preprocessing ----
   # vmd decomposition
   vmd_decomp <- vmd(
@@ -47,7 +49,7 @@ vmd_pred <- function(data, model_list){
   
   for (i in seq(IMF)) {
     n <- dim(IMF[[i]])[1]
-    cut <- n - 6
+    cut <- round(n * 0.8)
     
     IMF_train[[i]] <- IMF[[i]][1:cut,]
     IMF_test[[i]]  <- tail(IMF[[i]],n-cut)
@@ -213,8 +215,8 @@ vmd_pred <- function(data, model_list){
   metrics_VMD_train <- list()
   metrics_VMD_test <- list()
   errors <- list()
-  horizon <- c(1,3,6)
-  for (h in seq(horizon)) {
+  horizon <- c(3,6,12)
+  for (h in seq(length(horizon))) {
     {
       hrz <- horizon[h]
       PTRmo <- list()
@@ -224,7 +226,7 @@ vmd_pred <- function(data, model_list){
       k <- 1
     }
     
-    cat('\nHorizon: ', hrz, '\n')
+    cat('\nHorizon: ', hrz, 'steps\n')
     
     for (m in 1:length(model_list)) {
       
@@ -363,7 +365,7 @@ vmd_pred <- function(data, model_list){
     }
     
   }
-  names(step_VMD_pred) <- c('one-step','three-steps','six-steps')
+  names(step_VMD_pred) <- c('three-steps','six-steps','twelve-steps')
   names(metrics_VMD_train) <- names(step_VMD_pred)
   names(metrics_VMD_test) <- names(step_VMD_pred)
   names(errors) <- names(step_VMD_pred)

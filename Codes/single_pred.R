@@ -1,5 +1,6 @@
 single_pred <- function(data, model_list){
-  
+  cat('\n\n######### Single Prediction #########\n###########',
+      as.character(format.Date(data$PCTimeStamp[1])),'###########\n\n')
   # Data Preprocessing ----
   # number of lags
   lag <- 2
@@ -17,7 +18,7 @@ single_pred <- function(data, model_list){
   
   # create train and test sets
   n <- nrow(data_lag)
-  cut <- n - 6
+  cut <- round(n * 0.8)
   
   train <- data_lag[1:cut,]
   test <- tail(data_lag, n-cut)
@@ -93,7 +94,7 @@ single_pred <- function(data, model_list){
   metrics_train <- list()
   metrics_test <- list()
   errors <- list()
-  horizon <- c(1,3,6)
+  horizon <- c(3,6,12)
   
   for (h in seq(horizon)) {
     hrz <- horizon[h]
@@ -109,7 +110,7 @@ single_pred <- function(data, model_list){
     single_step_pred[[h]] <- matrix(nrow = n, ncol = length(model_list))
     colnames(single_step_pred[[h]]) <- model_list
     
-    cat('\nHorizon: ', hrz, '\n')
+    cat('\nHorizon: ', hrz, 'steps\n')
     
     for (m in seq(model_list)) {
       x_trainm <- as.data.frame(x_train)
@@ -208,7 +209,7 @@ single_pred <- function(data, model_list){
     }
   }
   
-  names(single_step_pred) <- c('one-step','three-steps','six-steps')
+  names(single_step_pred) <- c('three-steps','six-steps','twelve-steps')
   names(metrics_train) <- names(single_step_pred)
   names(metrics_test) <- names(single_step_pred)
   names(errors) <- names(single_step_pred)

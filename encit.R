@@ -26,7 +26,7 @@ sapply(packages,packs)
 rm(packages)
 
 library(extrafont)
-font_import(pattern = 'CM')
+# font_import(pattern = 'CM')
 library(ggplot2)
 library(Cairo)
 
@@ -41,7 +41,7 @@ raw_data <- read.csv('dataset.csv')
 raw_data$PCTimeStamp <- raw_data$PCTimeStamp %>% as.Date()
 
 # set a list of dates to analyze
-dates <- paste0('2017-08-',c(22:26))
+dates <- paste0('2017-08-',c(23:27))
 
 # create empty lists
 wind_data <- list()
@@ -55,7 +55,7 @@ model_list <- c(
   'cubist',
   'brnn',
   'qrf'
-)
+) %>% sort
 
 for (date in seq(length(dates)-1)) {
   # filtering the data according to date list
@@ -88,7 +88,7 @@ for (dataset in seq(vmd_results)) {
 
 
 # loop to save metrics results
-FH <- c('ODA','TDA','SDA') # aux to create forecasting horizon column
+FH <- c('Three-steps','Six-steps','Twelve-steps') # aux to create forecasting horizon column
 
 for (dataset in seq(vmd_results)) {
   filename_vmd <- paste0('dataset_',dates[dataset],'_vmd_metrics.csv') # vmd file name
@@ -166,83 +166,37 @@ for (dataset in seq(file_list)) {
 setwd(FiguresDir)
 datasets <- list()
 
-datasets[[1]] <- data.frame(
-  'Observed'     = vmd_results[[1]]$Predictions$`one-step`[,'Obs'],
-  'ODA.VMD.BRNN' = vmd_results[[1]]$Predictions$`one-step`[,'brnn'],
-  'Observed'     = vmd_results[[1]]$Predictions$`one-step`[,'Obs'],
-  'TDA.VMD.BRNN' = vmd_results[[1]]$Predictions$`three-steps`[,'brnn'],
-  'Observed'     = vmd_results[[1]]$Predictions$`one-step`[,'Obs'],
-  'SDA.VMD.BRNN' = vmd_results[[1]]$Predictions$`six-steps`[,'brnn']
-) %>% melt() %>% data.frame(
-  .,
-  rep(c('Observed','Predicted'), each = nrow(vmd_results[[1]]$Predictions$`one-step`)),
-  rep(c("ODA","TDA","SDA"), each= 2*nrow(vmd_results[[1]]$Predictions$`one-step`))
-)
-
-datasets[[1]]$variable <- NULL
-colnames(datasets[[1]]) <- c('value', 'type', 'FH')
-
-datasets[[2]] <- data.frame(
-  'Observed'       = vmd_results[[2]]$Predictions$`one-step`[,'Obs'],
-  'ODA.VMD.CUBIST' = vmd_results[[2]]$Predictions$`one-step`[,'cubist'],
-  'Observed'       = vmd_results[[2]]$Predictions$`one-step`[,'Obs'],
-  'TDA.VMD.CUBIST' = vmd_results[[2]]$Predictions$`three-steps`[,'cubist'],
-  'Observed'       = vmd_results[[2]]$Predictions$`one-step`[,'Obs'],
-  'SDA.VMD.CUBIST' = vmd_results[[2]]$Predictions$`six-steps`[,'cubist']
-) %>% melt() %>% data.frame(
-  .,
-  rep(c('Observed','Predicted'), each = nrow(vmd_results[[2]]$Predictions$`one-step`)),
-  rep(c("ODA","TDA","SDA"), each= 2*nrow(vmd_results[[2]]$Predictions$`one-step`))
-)
-
-datasets[[2]]$variable <- NULL
-colnames(datasets[[2]]) <- c('value', 'type', 'FH')
-
-datasets[[3]] <- data.frame(
-  'Observed'       = vmd_results[[3]]$Predictions$`one-step`[,'Obs'],
-  'ODA.VMD.CUBIST' = vmd_results[[3]]$Predictions$`one-step`[,'cubist'],
-  'Observed'       = vmd_results[[3]]$Predictions$`one-step`[,'Obs'],
-  'TDA.VMD.BRNN'   = vmd_results[[3]]$Predictions$`three-steps`[,'brnn'],
-  'Observed'       = vmd_results[[3]]$Predictions$`one-step`[,'Obs'],
-  'SDA.VMD.BRNN'   = vmd_results[[3]]$Predictions$`six-steps`[,'brnn']
-) %>% melt() %>% data.frame(
-  .,
-  rep(c('Observed','Predicted'), each = nrow(vmd_results[[3]]$Predictions$`one-step`)),
-  rep(c("ODA","TDA","SDA"), each= 2*nrow(vmd_results[[3]]$Predictions$`one-step`))
-)
-
-datasets[[3]]$variable <- NULL
-colnames(datasets[[3]]) <- c('value', 'type', 'FH')
-
-datasets[[4]] <- data.frame(
-  'Observed'    = vmd_results[[4]]$Predictions$`one-step`[,'Obs'],
-  'ODA.VMD.QRF' = vmd_results[[4]]$Predictions$`one-step`[,'qrf'],
-  'Observed'    = vmd_results[[4]]$Predictions$`one-step`[,'Obs'],
-  'TDA.VMD.QRF' = vmd_results[[4]]$Predictions$`three-steps`[,'qrf'],
-  'Observed'    = vmd_results[[4]]$Predictions$`one-step`[,'Obs'],
-  'SDA.VMD.QRF' = vmd_results[[4]]$Predictions$`six-steps`[,'qrf']
-) %>% melt() %>% data.frame(
-  .,
-  rep(c('Observed','Predicted'), each = nrow(vmd_results[[4]]$Predictions$`one-step`)),
-  rep(c("ODA","TDA","SDA"), each= 2*nrow(vmd_results[[4]]$Predictions$`one-step`))
-)
-
-datasets[[4]]$variable <- NULL
-colnames(datasets[[4]]) <- c('value', 'type', 'FH')
+for (ii in seq(4)) {
+  datasets[[ii]] <- data.frame(
+    'Observed'       = vmd_results[[ii]]$Predictions$`three-steps`[,'Obs'],
+    'TSA.VMD.CUBIST' = vmd_results[[ii]]$Predictions$`three-steps`[,'cubist'],
+    'Observed'       = vmd_results[[ii]]$Predictions$`three-steps`[,'Obs'],
+    'SSA.VMD.CUBIST' = vmd_results[[ii]]$Predictions$`six-steps`[,'cubist'],
+    'Observed'       = vmd_results[[ii]]$Predictions$`three-steps`[,'Obs'],
+    'TWA.VMD.CUBIST' = vmd_results[[ii]]$Predictions$`twelve-steps`[,'cubist']
+  ) %>% melt() %>% data.frame(
+    .,
+    rep(c('Observed','Predicted'), each = nrow(vmd_results[[ii]]$Predictions$`three-steps`)),
+    rep(c("Three-steps","Six-steps","Twelve-steps"), each= 2*nrow(vmd_results[[ii]]$Predictions$`three-steps`))
+  )
+  
+  datasets[[ii]]$variable <- NULL
+  colnames(datasets[[ii]]) <- c('value', 'type', 'FH')
+}
 
 count <- 1
 
 for (dataset in datasets) {
   n <- table(dataset$FH)[1]/2
   
-  dataset$FH <- dataset$FH %>% factor(levels = c('ODA', 'TDA', 'SDA'))
+  dataset$FH <- dataset$FH %>% factor(levels = c("Three-steps","Six-steps","Twelve-steps"))
   
   plot <- dataset %>% as.data.frame %>% 
-    ggplot(aes(x = rep(seq(n),6), y = value, linetype = type, colour = type)) +
+    ggplot(aes(x = rep(seq(n),6), y = value, colour = type)) +
     geom_line(size = 1) +
     theme_bw() +
     theme(legend.title = element_blank(),
-          legend.position = c(0.1, 0.75),
+          legend.position = 'bottom',
           legend.background = element_blank(),
           legend.text = element_text(size = 16),
           text = element_text(family = "CM Roman", size = 20),
@@ -255,10 +209,10 @@ for (dataset in datasets) {
     scale_x_continuous(breaks = seq(0,n,70), limits = c(0,n)) +
     scale_y_continuous(breaks = c(1000, 1500, 2000)) +
     scale_color_brewer(palette = 'Set1') +
-    geom_vline(xintercept = n - 6, color = 'black', size = 0.5) +
-    annotate(geom = 'text', x = n*.3, y = 1000, 
+    geom_vline(xintercept = round(n*0.8), color = 'black', size = 0.5) +
+    annotate(geom = 'text', x = min(seq(n)), y = min(dataset$value), hjust = .2, vjust = .4, 
              label = 'Training', color = 'black', family = 'CM Roman', size = 6) +
-    annotate(geom = 'text', x = n, y = 1000, 
+    annotate(geom = 'text', x = round(n*0.85), min(dataset$value), hjust = .2, vjust = .4,
              label = 'Test', color = 'black', family = 'CM Roman', size = 6)
     
   plot %>% 
