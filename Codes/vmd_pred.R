@@ -66,6 +66,9 @@ vmd_pred <- function(data, model_list){
   Obs_train <- Obs[1:cut]
   Obs_test  <- tail(Obs,n-cut)
   
+  IMF_df <- data.frame(vmd_decomp[,c(2:7)])
+  colnames(IMF_df) <- c('Obs', paste0('IMF', seq(5)))
+  
   # Training phase ----
   # set random seed
   set.seed(1234)
@@ -374,7 +377,8 @@ vmd_pred <- function(data, model_list){
                       Metrics = metrics_VMD_test,
                       Hyperparameters = Params,
                       Var_Importance = Importance,
-                      Errors = errors)
+                      Errors = errors,
+                      IMF = IMF_df)
   
   return(vmd_results)
 }

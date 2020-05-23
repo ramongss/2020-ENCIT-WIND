@@ -17,7 +17,7 @@ source("checkpackages.R")
 source("vmd_pred.R")
 source("single_pred.R")
 
-packages<-c('vmd','dplyr','tidyverse','magrittr', 'caret', 'reshape2',
+packages<-c('vmd','dplyr','tidyverse','magrittr', 'caret', 'reshape2', 'gghighlight',
             'TTR', 'forecast', 'Metrics', 'e1071', "cowplot", "elmNNRcpp", 
             "tcltk", "foreach", "iterators","doParallel","lmtest","wmtsa","magrittr")
 
@@ -73,7 +73,7 @@ for (date in seq(length(dates)-1)) {
 # set working directory
 setwd(ResultsDir)
 
-# loop to save RData
+# loop to save RDS
 for (dataset in seq(vmd_results)) {
   saveRDS(
     object = vmd_results[[dataset]],
@@ -142,7 +142,7 @@ for (dataset in seq(vmd_results)) {
 # Plot ----
 setwd(ResultsDir)
 
-# load data
+## load data
 file_list <- list.files(pattern = '.rds') # list the .rds files
 
 vmd_results <- list()
@@ -162,7 +162,7 @@ for (dataset in seq(file_list)) {
   }
 }
 
-## Datasets
+## Plot Predict x Observed
 setwd(FiguresDir)
 datasets <- list()
 
@@ -198,7 +198,7 @@ for (dataset in datasets) {
     theme(legend.title = element_blank(),
           legend.position = 'bottom',
           legend.background = element_blank(),
-          legend.text = element_text(size = 16),
+          legend.text = element_text(size = 20),
           text = element_text(family = "CM Roman", size = 20),
           strip.placement = "outside",
           strip.background = element_blank(),
@@ -206,13 +206,13 @@ for (dataset in datasets) {
           ) +
     ylab('Wind Power (KW)') + xlab('Samples (10 minutes)') +
     facet_grid(rows = vars(FH)) +
-    scale_x_continuous(breaks = seq(0,n,70), limits = c(0,n)) +
+    scale_x_continuous(breaks = seq(0,n,35), limits = c(0,n)) +
     scale_y_continuous(breaks = c(1000, 1500, 2000)) +
     scale_color_brewer(palette = 'Set1') +
     geom_vline(xintercept = round(n*0.8), color = 'black', size = 0.5) +
-    annotate(geom = 'text', x = min(seq(n)), y = min(dataset$value), hjust = .2, vjust = .4, 
+    annotate(geom = 'text', x = min(seq(n)), y = min(dataset$value), hjust = .2, vjust = -.4, 
              label = 'Training', color = 'black', family = 'CM Roman', size = 6) +
-    annotate(geom = 'text', x = round(n*0.85), min(dataset$value), hjust = .2, vjust = .4,
+    annotate(geom = 'text', x = round(n*0.85), min(dataset$value), hjust = .2, vjust = -.4,
              label = 'Test', color = 'black', family = 'CM Roman', size = 6)
     
   plot %>% 
@@ -227,3 +227,74 @@ for (dataset in datasets) {
   
   count <- count + 1
 }
+
+## Plot IMFs
+setwd(FiguresDir)
+
+IMFs <- data.frame()
+
+for (dataset in seq(length(vmd_results))) {
+  vmd_results[[dataset]]$IMF$Dataset <- rep(dates[dataset])
+  vmd_results[[dataset]]$IMF$n <- seq(nrow(vmd_results[[dataset]]$IMF))
+  IMFs <- rbind(IMFs,vmd_results[[dataset]]$IMF %>% melt(id.vars = c('Dataset','n')))
+}
+
+IMFs <- IMFs %>% 
+  filter(Dataset != '2017-08-25')
+
+IMFs$Dataset <- IMFs$Dataset %>% 
+  factor(levels = paste0('2017-08-',c(23,24,26)),
+         labels = paste0('Dataset ', seq(3)))
+
+IMFs$variable <- IMFs$variable %>% 
+  factor(
+    levels = c('Obs', paste0('IMF',seq(5))),
+    labels = c('Data', paste0('IMF',seq(5)))
+  )
+
+imf_plot <- IMFs %>% 
+  filter(variable != 'Data') %>%
+  ggplot(aes(x = n, y = value, colour = variable)) +
+  geom_line(size = 1, colour='#0000FF') +
+  theme_bw() +
+  theme(
+    text = element_text(family = "CM Roman", size = 16),
+    strip.placement = "outside",
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank(),
+  ) +
+  ylab('') + xlab('Samples(10 minutes)') +
+  facet_grid(
+    variable ~ Dataset,
+    scales = 'free',
+    switch = 'y',
+  ) +
+  scale_x_continuous(breaks = seq(0,n,35)) +
+  scale_y_continuous(breaks = c(-200,0,200,1200,1600,2000))
+
+imf_plot
+
+imf_plot %>% 
+  ggsave(
+    filename = 'imf_plot.pdf',
+    device = 'pdf',
+    width = 12,
+    height = 6.75,
+    units = "in",
+    dpi = 300
+  ) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
