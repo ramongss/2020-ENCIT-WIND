@@ -244,16 +244,25 @@ IMFs <- IMFs %>%
 
 IMFs$Dataset <- IMFs$Dataset %>% 
   factor(levels = paste0('2017-08-',c(23,24,26)),
-         labels = paste0('Dataset ', seq(3)))
+         labels = paste0('Dataset~', seq(3)))
+
+imf_labels <- 
+  c(
+    expression(paste(IMF[1])),
+    expression(paste(IMF[2])),
+    expression(paste(IMF[3])),
+    expression(paste(IMF[4])),
+    expression(paste(IMF[5]))
+  )
 
 IMFs$variable <- IMFs$variable %>% 
   factor(
     levels = c('Obs', paste0('IMF',seq(5))),
-    labels = c('Data', paste0('IMF',seq(5)))
+    labels = c('Obs',imf_labels)
   )
 
 imf_plot <- IMFs %>% 
-  filter(variable != 'Data') %>%
+  filter(variable != 'Obs') %>%
   ggplot(aes(x = n, y = value, colour = variable)) +
   geom_line(size = 1, colour='#0000FF') +
   theme_bw() +
@@ -268,8 +277,9 @@ imf_plot <- IMFs %>%
     variable ~ Dataset,
     scales = 'free',
     switch = 'y',
+    labeller = "label_parsed",
   ) +
-  scale_x_continuous(breaks = seq(0,n,35)) +
+  scale_x_continuous(breaks = seq(0,max(IMFs$n),35)) +
   scale_y_continuous(breaks = c(-200,0,200,1200,1600,2000))
 
 imf_plot
