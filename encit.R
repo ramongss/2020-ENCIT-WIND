@@ -64,7 +64,7 @@ for (date in seq(length(dates)-1)) {
   
   # training using vmd
   vmd_results[[date]] <- vmd_pred(wind_data[[date]], model_list)
-  
+
   # training using single models
   single_results[[date]] <- single_pred(wind_data[[date]], model_list)
 }
@@ -208,7 +208,7 @@ for (dataset in datasets) {
     facet_grid(rows = vars(FH)) +
     scale_x_continuous(breaks = seq(0,n,35), limits = c(0,n)) +
     scale_y_continuous(breaks = c(1000, 1500, 2000)) +
-    scale_color_brewer(palette = 'Set1') +
+    scale_color_manual(values = c("#377EB8","#E41A1C")) +
     geom_vline(xintercept = round(n*0.8), color = 'black', size = 0.5) +
     annotate(geom = 'text', x = min(seq(n)), y = min(dataset$value), hjust = .2, vjust = -.4, 
              label = 'Training', color = 'black', family = 'CM Roman', size = 6) +
@@ -264,7 +264,7 @@ IMFs$variable <- IMFs$variable %>%
 imf_plot <- IMFs %>% 
   filter(variable != 'Obs') %>%
   ggplot(aes(x = n, y = value, colour = variable)) +
-  geom_line(size = 1, colour='#0000FF') +
+  geom_line(size = 1, colour='#377EB8') +
   theme_bw() +
   theme(
     text = element_text(family = "CM Roman", size = 16),
@@ -294,8 +294,87 @@ imf_plot %>%
     dpi = 300
   ) 
 
+## Plot datasets
+setwd(FiguresDir)
 
+wind_data[[3]] <- NULL
 
+obs_dataset <- data.frame(
+  'n' = seq(144),
+  'type' = c(rep('Training', times = 101), rep('Test', times = 43))
+)
+
+for (dataset in seq(length(wind_data))) {
+  obs_dataset <- cbind(obs_dataset, wind_data[[dataset]][,'Power'])
+}
+
+colnames(obs_dataset) <- c('n', 'type', paste('Dataset', seq(3)))
+
+obs_dataset <- obs_dataset %>% melt(id.vars = c('n','type'))
+
+dataplot <- obs_dataset %>% 
+  ggplot(aes(x = n, y = value)) +
+  geom_line(size = 1, colour='#377EB8') +
+  facet_grid(vars(variable), scales = 'free', switch = 'y') +
+  theme_bw() +
+  theme(legend.title = element_blank(),
+        legend.position = 'bottom',
+        legend.background = element_blank(),
+        legend.text = element_text(size = 20),
+        text = element_text(family = "CM Roman", size = 20),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 20),
+  ) +
+  ylab('') + xlab('Samples (10 minutes)') +
+  scale_x_continuous(breaks = seq(0,max(obs_dataset$n),35), limits = c(0,max(obs_dataset$n))) +
+  scale_y_continuous(breaks = scales::pretty_breaks(4))
+
+dataplot %>% 
+  ggsave(
+    filename = 'datasets_plot.pdf',
+    device = 'pdf',
+    width = 12,
+    height = 6.75,
+    units = "in",
+    dpi = 300
+  ) 
+
+## Summary table
+
+wind_data[[3]] <- NULL
+
+summaries_table <- data.frame(
+  'Variable' = rep(names(wind_data[[1]])[-1], times = 3),
+  'Samples' = rep(c('Whole', 'Training', 'Test'), each = ncol(wind_data[[1]][-1]))
+)
+
+for (dataset in seq(length(wind_data))) {
+  #Descriptives
+  n <- nrow(wind_data[[dataset]])
+  cut <- round(0.7*n)
+  
+  #Whole
+  Whole <- t(apply(wind_data[[dataset]][,-1],2,function(x){c(mean(x),sd(x),min(x),max(x))}))
+  colnames(Whole) <- paste0(c('Mean.', 'Std.', 'Min.', 'Max.'), dataset)
+  #Train Descriptives
+  Train <- t(apply(wind_data[[dataset]][1:cut,-1],2,function(x){c(mean(x),sd(x),min(x),max(x))}))
+  colnames(Train) <- names(Whole)
+  #Test Descriptives
+  Test <- t(apply(tail(wind_data[[dataset]][,-1],n-cut),2,function(x){c(mean(x),sd(x),min(x),max(x))}))
+  colnames(Test) <- names(Whole)
+  
+  #Merge
+  summaries_table <- cbind(summaries_table, rbind(Whole, Train, Test))
+  row.names(summaries_table) <- NULL # reset row index
+}
+
+# Reorder rows
+summaries_table <- summaries_table %>% 
+  arrange(factor(Variable, levels = names(wind_data[[1]][-1])))
+
+print(xtable::xtable(summaries_table, digits = 2), include.rownames=FALSE)
 
 
 
