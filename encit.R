@@ -1,15 +1,15 @@
-# Set environment ----
+# Set environment ---------------------------------------------------------
 rm(list = ls())
-Sys.setenv("LANGUAGE"="En")
+Sys.setenv("LANGUAGE" = "En")
 Sys.setlocale("LC_ALL", "English")
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # save several directories
 BaseDir       <- getwd()
-CodesDir      <- paste(BaseDir, "Codes", sep="/")
-FiguresDir    <- paste(BaseDir, "Figures", sep="/")
-ResultsDir    <- paste(BaseDir, "Results", sep="/")
-DataDir       <- paste(BaseDir, "Data",sep="/")
+CodesDir      <- paste(BaseDir, "Codes", sep = "/")
+FiguresDir    <- paste(BaseDir, "Figures", sep = "/")
+ResultsDir    <- paste(BaseDir, "Results", sep = "/")
+DataDir       <- paste(BaseDir, "Data",sep = "/")
 
 # load Packages
 setwd(CodesDir)
@@ -17,9 +17,9 @@ source("checkpackages.R")
 source("vmd_pred.R")
 source("single_pred.R")
 
-packages<-c('vmd','dplyr','tidyverse','magrittr', 'caret', 'reshape2', 'gghighlight',
-            'TTR', 'forecast', 'Metrics', 'e1071', "cowplot", "elmNNRcpp", 
-            "tcltk", "foreach", "iterators","doParallel","lmtest","wmtsa","magrittr")
+packages <- c('vmd','dplyr','tidyverse','magrittr', 'caret', 'reshape2', 'gghighlight',
+              'TTR', 'forecast', 'Metrics', 'e1071', "cowplot", "elmNNRcpp", 
+              "tcltk", "foreach", "iterators","doParallel","lmtest","wmtsa","magrittr")
 
 sapply(packages,packs)
 
@@ -30,7 +30,8 @@ library(extrafont)
 library(ggplot2)
 library(Cairo)
 
-# Data treatment ----
+
+# Data treatment ----------------------------------------------------------
 # set working directory
 setwd(DataDir) 
 
@@ -57,10 +58,10 @@ model_list <- c(
   'qrf'
 ) %>% sort
 
-for (date in seq(length(dates)-1)) {
+for (date in seq(length(dates) - 1)) {
   # filtering the data according to date list
   wind_data[[date]] <- raw_data %>% 
-    filter(PCTimeStamp >= dates[date] & PCTimeStamp < dates[date+1])
+    filter(PCTimeStamp >= dates[date] & PCTimeStamp < dates[date + 1])
   
   # training using vmd
   vmd_results[[date]] <- vmd_pred(wind_data[[date]], model_list)
@@ -69,7 +70,7 @@ for (date in seq(length(dates)-1)) {
   single_results[[date]] <- single_pred(wind_data[[date]], model_list)
 }
 
-# Save results ----
+# Save results ------------------------------------------------------------
 # set working directory
 setwd(ResultsDir)
 
@@ -85,7 +86,6 @@ for (dataset in seq(vmd_results)) {
     file = paste0('results_',dates[dataset],'_single.rds')
   )
 }
-
 
 # loop to save metrics results
 FH <- c('Three-steps','Six-steps','Twelve-steps') # aux to create forecasting horizon column
@@ -116,7 +116,7 @@ for (dataset in seq(vmd_results)) {
     data.frame(
       FH = rep(FH[metric]),
       vmd_results[[dataset]]$Metrics[[metric]][,-1] %>% 
-        .[order(as.character(rownames(.))),,drop=FALSE]
+        .[order(as.character(rownames(.))),,drop = FALSE]
     ) %>%
       write.table(file = filename_vmd,
                   append = TRUE,
@@ -128,7 +128,7 @@ for (dataset in seq(vmd_results)) {
     data.frame(
       FH = rep(FH[metric]),
       single_results[[dataset]]$Metrics[[metric]][,-1] %>% 
-        .[order(as.character(rownames(.))),,drop=FALSE]
+        .[order(as.character(rownames(.))),,drop = FALSE]
     ) %>%
       write.table(file = filename_single,
                   append = TRUE,
@@ -138,8 +138,7 @@ for (dataset in seq(vmd_results)) {
   }
 }
 
-
-# Plot ----
+# Plot --------------------------------------------------------------------
 setwd(ResultsDir)
 
 ## load data
@@ -153,7 +152,7 @@ count_vmd <- 1 # vmd models aux counter
 
 # loop to read data
 for (dataset in seq(file_list)) {
-  if (dataset%%2 != 0) {
+  if (dataset %% 2 != 0) {
     single_results[[count_single]] <- readRDS(file = file_list[dataset])
     count_single <- count_single + 1
   } else {
@@ -177,7 +176,7 @@ for (ii in seq(4)) {
   ) %>% melt() %>% data.frame(
     .,
     rep(c('Observed','Predicted'), each = nrow(vmd_results[[ii]]$Predictions$`three-steps`)),
-    rep(c("Three-steps","Six-steps","Twelve-steps"), each= 2*nrow(vmd_results[[ii]]$Predictions$`three-steps`))
+    rep(c("Three-steps","Six-steps","Twelve-steps"), each = 2*nrow(vmd_results[[ii]]$Predictions$`three-steps`))
   )
   
   datasets[[ii]]$variable <- NULL
@@ -264,7 +263,7 @@ IMFs$variable <- IMFs$variable %>%
 imf_plot <- IMFs %>% 
   filter(variable != 'Obs') %>%
   ggplot(aes(x = n, y = value, colour = variable)) +
-  geom_line(size = 1, colour='#377EB8') +
+  geom_line(size = 1, colour = '#377EB8') +
   theme_bw() +
   theme(
     text = element_text(family = "CM Roman", size = 16),
@@ -314,7 +313,7 @@ obs_dataset <- obs_dataset %>% melt(id.vars = c('n','type'))
 
 dataplot <- obs_dataset %>% 
   ggplot(aes(x = n, y = value)) +
-  geom_line(size = 1, colour='#377EB8') +
+  geom_line(size = 1, colour = '#377EB8') +
   facet_grid(vars(variable), scales = 'free', switch = 'y') +
   theme_bw() +
   theme(legend.title = element_blank(),
@@ -362,7 +361,7 @@ for (dataset in seq(length(wind_data))) {
   Train <- t(apply(wind_data[[dataset]][1:cut,-1],2,function(x){c(mean(x),sd(x),min(x),max(x))}))
   colnames(Train) <- names(Whole)
   #Test Descriptives
-  Test <- t(apply(tail(wind_data[[dataset]][,-1],n-cut),2,function(x){c(mean(x),sd(x),min(x),max(x))}))
+  Test <- t(apply(tail(wind_data[[dataset]][,-1],n - cut),2,function(x){c(mean(x),sd(x),min(x),max(x))}))
   colnames(Test) <- names(Whole)
   
   #Merge
@@ -374,7 +373,7 @@ for (dataset in seq(length(wind_data))) {
 summaries_table <- summaries_table %>% 
   arrange(factor(Variable, levels = names(wind_data[[1]][-1])))
 
-print(xtable::xtable(summaries_table, digits = 2), include.rownames=FALSE)
+print(xtable::xtable(summaries_table, digits = 2), include.rownames = FALSE)
 
 
 
