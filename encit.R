@@ -19,7 +19,7 @@ source("single_pred.R")
 
 packages <- c('vmd','dplyr','tidyverse','magrittr', 'caret', 'reshape2', 'gghighlight',
               'TTR', 'forecast', 'Metrics', 'e1071', "cowplot", "elmNNRcpp", 
-              "tcltk", "foreach", "iterators","doParallel","lmtest","wmtsa","magrittr")
+              "tcltk", "foreach", "iterators","doParallel","lmtest","magrittr")
 
 sapply(packages,packs)
 

@@ -307,7 +307,7 @@ vmd_pred <- function(data, model_list){
     {
       metrics_VMD_train[[h]] <- matrix(nrow = dim(combs)[1],ncol = 4)
       metrics_VMD_test[[h]] <- matrix(nrow = dim(combs)[1],ncol = 4)
-      colnames(metrics_VMD_train[[h]]) <- c("i","sMAPE","RRMSE","R2")
+      colnames(metrics_VMD_train[[h]]) <- c("i","RRMSE","sMAPE","R2")
       colnames(metrics_VMD_test[[h]]) <- colnames(metrics_VMD_train[[h]])
       rownames(metrics_VMD_train[[h]]) <- model_list
       rownames(metrics_VMD_test[[h]]) <- rownames(metrics_VMD_train[[h]])
@@ -349,12 +349,12 @@ vmd_pred <- function(data, model_list){
       vmd_step_r2_test    <- cor(step_VMD_pred_test[,i], Obs_test)^2
       
       metrics_VMD_train[[h]][i,] <- c(i,
-                                      vmd_step_smape_train,
                                       vmd_step_rrmse_train,
+                                      vmd_step_smape_train,
                                       vmd_step_r2_train)
       metrics_VMD_test[[h]][i,] <- c(i,
-                                     vmd_step_smape_test,
                                      vmd_step_rrmse_test,
+                                     vmd_step_smape_test,
                                      vmd_step_r2_test)
     }
     step_VMD_pred[[h]] <- cbind(Obs, step_VMD_pred[[h]]) 

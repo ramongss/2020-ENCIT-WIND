@@ -102,7 +102,7 @@ single_pred <- function(data, model_list){
     PTEmo[[h]] <- matrix(ncol = length(model_list), nrow = nrow(test))
     metrics_train[[h]] <- matrix(nrow = length(model_list), ncol = 4)
     metrics_test[[h]] <- matrix(nrow = length(model_list), ncol = 4)
-    colnames(metrics_train[[h]]) <- c("i","sMAPE","RRMSE","R2")
+    colnames(metrics_train[[h]]) <- c("i","RRMSE","sMAPE","R2")
     colnames(metrics_test[[h]]) <- colnames(metrics_train[[h]])
     rownames(metrics_train[[h]]) <- model_list
     rownames(metrics_test[[h]]) <- rownames(metrics_train[[h]])
@@ -184,12 +184,12 @@ single_pred <- function(data, model_list){
       step_r2_test    <- cor(PTEmo[[h]][,m], Obs_test)^2
       
       metrics_train[[h]][m,] <- c(m,
-                                  step_smape_train,
                                   step_rrmse_train,
+                                  step_smape_train,
                                   step_r2_train)
       metrics_test[[h]][m,] <- c(m,
-                                 step_smape_test,
                                  step_rrmse_test,
+                                 step_smape_test,
                                  step_r2_test)
       
       
@@ -201,7 +201,7 @@ single_pred <- function(data, model_list){
     single_step_pred[[h]] <- cbind(Obs, single_step_pred[[h]]) 
     colnames(single_step_pred[[h]]) <- c('Obs',model_list)
     
-    # calculte errors
+    # calculate errors
     errors[[h]] <- matrix(ncol = length(model_list), nrow = n)
     colnames(errors[[h]]) <- model_list
     for (error in seq(ncol(errors[[h]]))) {
