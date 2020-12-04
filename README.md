@@ -12,7 +12,7 @@
 ### Publication
 - [Preprint (ResearchGate)](https://www.researchgate.net/publication/345943035_Wind_energy_multi-step_ahead_forecasting_based_on_variational_mode_decomposition)
 
-- [Conference paper (ABCM proceedings)]()
+- [Conference paper (ABCM proceedings)](https://doi.org/10.26678/ABCM.ENCIT2020.CIT20-0400)
 
 ### How to cite this paper
 ```bibtex
